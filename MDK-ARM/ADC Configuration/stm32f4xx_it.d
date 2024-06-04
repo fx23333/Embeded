@@ -28,9 +28,11 @@ adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_flash_ramfunc.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_i2c.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_i2c_ex.h
+adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_iwdg.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pwr.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pwr_ex.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h
 adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_uart.h
+adc configuration\stm32f4xx_it.o: ..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_wwdg.h
 adc configuration\stm32f4xx_it.o: ..\Inc\stm32f4xx_it.h

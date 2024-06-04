@@ -43,7 +43,6 @@
 /* USER CODE BEGIN Includes */
 #include "zlg7290.h"
 #include "stdio.h"
-#include "stdio.h"
 #include "i2c.h"
 /* USER CODE END Includes */
 
@@ -51,12 +50,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-__IO uint16_t adcx[4] = {0};
-float temp0, temp1, temp2, temp3;
-float delta = 3.0;
-double AlcoholLastTime;
-#define MAXDIFFRENCE 0.1
-#define SAMPLINGCOUNT 10
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -100,22 +94,78 @@ typedef struct
 Note melody[] = {
     {NOTE_C4, DURATION_QUARTER},        // 0
     {NOTE_A4, DURATION_DOTTED_QUARTER}, // 6 (????)
+		
     {NOTE_A4, DURATION_DOTTED_QUARTER}, // 6 (????)
     {NOTE_E4, DURATION_QUARTER},        // 3
     {NOTE_E4, DURATION_QUARTER},        // 3
     {NOTE_A4, DURATION_DOTTED_QUARTER}, // 6 (????)
     {NOTE_A4, DURATION_DOTTED_QUARTER}  // 6 (????,??)
 };
-unsigned char seg7code[10] = {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6}; // 数码管字根
+// unsigned char seg7code[10] = {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6} ; // 数码管字根
+
+
+__IO uint16_t adcx[4] = {0};
 unsigned char Empty[8] = {0};
 uint8_t Tx1_Buffer[8] = {0};
-unsigned int remainingLoopToSleep;
+IWDG_HandleTypeDef hiwdg;
+
+// 凡是不会被初始化的变量都是重要变量！需要备份！
+unsigned int remainingLoopToSleep __attribute__( (section("NO_INIT"), zero_init) );
+unsigned int isSleeping __attribute__( (section("NO_INIT"), zero_init) );
+double alcoholLastTime __attribute__( (section("NO_INIT"), zero_init) );
+unsigned int isWarmStarting __attribute__( (section("NO_INIT"), zero_init) );
+unsigned int remainingHardWareWaitingLoop __attribute__( (section("NO_INIT"), zero_init) );
+unsigned int state __attribute__( (section("NO_INIT"), zero_init) );
+float currentAlcohol __attribute__( (section("NO_INIT"), zero_init) );
 #define SLEEPTHRESHOLD 5
+#define ALERTTHRESHOLD 0.9
+#define MAXDIFFRENCE 0.1
+#define SAMPLINGCOUNT 10
+#define WARMSTARTFLAG 114514
+
+
+enum States {
+		TESTSTART, ALERT, SHOW, WAITINGFORHARDWARE, READ, WAKEUP, SHOULDSLEEP, DELAY, GOTOSLEEP, START, FEEDDOG
+};
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+
+void ErrorState()
+{
+	  state = START;
+	  printf("\r\n系统出现异常，开始热启动\n\r");
+}
+
+// {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6}
+int seg7code(int x) 
+{
+	  if (x < 0 || x >= 10)
+		{
+			  printf("\r\n无效输入\n\r");
+				return 0;
+		}
+		
+		switch (x)
+	  {
+			  case 0: return  0xFC;
+			  case 1: return 0x0C;
+				case 2: return 0xDA;
+				case 3: return 0xF2;
+				case 4: return 0x66;
+				case 5: return 0xB6;
+				case 6: return 0xBE;
+				case 7: return 0xE0;
+				case 8: return 0xFE;
+				case 9: return 0xE6;
+		}
+		
+}
+
+
 
 void alert(int count)
 {
@@ -151,15 +201,56 @@ void alert(int count)
     }
 }
 
-void Show(double data) // 显示函数
+// @brief: 显示浮点数
+void Show(double data) 
 {
     /*****************数据转换*****************************/
 
+		
+		
+		
     for (int i = 0; i < 8; i++)
     {
         int idx = (int)data % 10;
-        Tx1_Buffer[i] = seg7code[idx];
+        Tx1_Buffer[i] = seg7code(idx);
         data *= 10;
+    }
+
+    Tx1_Buffer[0] |= 1;
+    I2C_ZLG7290_Write(&hi2c1, 0x70, ZLG_WRITE_ADDRESS1, Tx1_Buffer, 8);
+		
+		
+		
+		
+}
+
+void ShowSafe(double data)
+{
+	  if (state != SHOW)
+		{
+			  ErrorState();
+			  return;
+		}
+		Show(data);
+		state = SHOULDSLEEP;
+}
+
+// @brief: 显示整数
+void ShowInteger(unsigned data) 
+{
+    /*****************数据转换*****************************/
+
+		if (data > 99999999) 
+		{
+			  data = 99999999;
+			  printf("\r\n数码管溢出！\n\r");
+		}
+		
+    for (int i = 0; i < 8; i++)
+    {
+        int idx = data % 10;
+        Tx1_Buffer[7 - i] = seg7code(idx);
+			  data /= 10;
     }
 
     Tx1_Buffer[0] |= 1;
@@ -196,35 +287,222 @@ float ReadAlcohol(void)
     return sum / total;
 }
 
-int ShouldSleep(float temp)
+void ShouldSleep(float temp)
 {
-    if (temp < AlcoholLastTime && AlcoholLastTime - temp < MAXDIFFRENCE ||
-        temp >= AlcoholLastTime && temp - AlcoholLastTime < MAXDIFFRENCE)
+
+    // 这里我们首先判断当前浓度和上一次浓度是否差距过大，若是，则remainingLoopToSleep自减
+    // remainingLoopToSleep减到0则去睡觉
+		if (state != SHOULDSLEEP) 
+		{
+			  ErrorState();
+			  return;
+		}
+	  printf("\r\n这里应该对数据完整性进行一个检查！\n\r");
+    if (temp < 0.4 && 
+			(temp < alcoholLastTime && alcoholLastTime - temp < MAXDIFFRENCE ||
+        temp >= alcoholLastTime && temp - alcoholLastTime < MAXDIFFRENCE))
     {
         remainingLoopToSleep--;
     }
     else
     {
+        // 若浓度出现了较大差距，我们则更新remainingLoopToSleep
         remainingLoopToSleep = SLEEPTHRESHOLD;
     }
-    AlcoholLastTime = temp;
+
+    // 更新上次浓度
+    alcoholLastTime = temp;
 
     if (remainingLoopToSleep == 0)
     {
         remainingLoopToSleep = SLEEPTHRESHOLD;
-        return 1;
+			  state = GOTOSLEEP;
     }
     else
-        return 0;
+        state = FEEDDOG;
 }
 
 void GoToSleep(void)
 {
-    printf("We are going to sleep\n");
+	  if (state != GOTOSLEEP)
+		{
+			  ErrorState();
+			  return;
+		}
+    printf("\r\n准备睡觉\n\r");
     I2C_ZLG7290_Write(&hi2c1, 0x70, ZLG_WRITE_ADDRESS1, Empty, 8);
-    HAL_SuspendTick();
+    isSleeping = 1;
+    // HAL_SuspendTick();
     HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+		state = FEEDDOG;
 }
+
+void WakeUp(void)
+{
+		if (state != WAKEUP)
+		{
+			  ErrorState();
+			  return;
+		}
+	  // 这里我们只读一次，也不滤波，因为我们只是需要判断当前是否需要醒来
+	  float temp = (float)adcx[0] * (3.3 / 4096);
+	  remainingLoopToSleep = SLEEPTHRESHOLD;
+	  printf("\r\n准备醒来\n\r");
+	  if (!(temp > alcoholLastTime && temp - alcoholLastTime < MAXDIFFRENCE ||
+			temp <= alcoholLastTime && alcoholLastTime - temp < MAXDIFFRENCE))
+		{
+			  // 发现传感器数值差距大了，正式醒来
+			  isSleeping = 0;
+			  // HAL_PWR_DisableSleepOnExit();
+			  // HAL_ResumeTick();
+			  Show(0);
+		}
+		
+		
+		state = FEEDDOG;
+		
+}
+
+void InitAll(void) 
+{    
+	
+	  if (state != START)
+		{
+			  ErrorState();
+			  HAL_Delay(1000);
+			  return;
+		}
+	  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init();
+
+    /* Configure the system clock */
+    SystemClock_Config();
+	  /* Initialize all configured peripherals */
+
+    // 这一部分6条似乎老师说初始化顺序无关，可以进行随机化执行
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_I2C1_Init();
+    MX_TIM3_Init();
+    MX_ADC3_Init();
+    MX_USART1_UART_Init();
+	  
+	
+    HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcx, 4); // 开启ADC转换
+		
+		
+		// 初始化看门狗
+		hiwdg.Instance = IWDG;
+		hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
+		hiwdg.Init.Reload = 0x01D3;
+		HAL_IWDG_Init(&hiwdg);
+		HAL_IWDG_Start(&hiwdg);
+	  printf("\r\n硬件，端口和看门狗初始化完毕！\n\r");
+		state = TESTSTART;
+}
+
+void WaitingForHardWare()
+{
+	  if (state != WAITINGFORHARDWARE)
+		{
+			  ErrorState();
+			  return;
+		}
+	  while (remainingHardWareWaitingLoop > 0) 
+		{
+			  // 这里两个代码块之间可以随机化
+				{
+						remainingHardWareWaitingLoop--;
+						ShowInteger(remainingHardWareWaitingLoop);
+				}
+				
+				{
+						HAL_Delay(1000);
+				}
+		}
+		if (!isSleeping)
+				state = READ;
+		else
+			  state = WAKEUP;
+}
+
+void TestStart(void)
+{
+		if (state != TESTSTART)
+		{
+			  ErrorState();
+			  return;
+		}
+	  if (isWarmStarting == WARMSTARTFLAG /*&& 校验通过*/)
+		{
+			  printf("\r\n热启动，注意这里还需要补充校验！！！！！\n\r");
+		}
+		else
+		{
+			  // 这里也可以随机化
+			  printf("\r\n冷启动\n\r");
+		    remainingLoopToSleep = SLEEPTHRESHOLD;
+        isSleeping = 1;
+		    isWarmStarting = WARMSTARTFLAG;
+			  remainingHardWareWaitingLoop = 6;
+		}
+		state = WAITINGFORHARDWARE;
+}
+
+void ReadSafe()
+{
+	  if (state != READ)
+		{
+			  ErrorState();
+			  return;
+		}
+		currentAlcohol = ReadAlcohol();
+		printf("\r\n 酒精传感器 =%f \n\r", currentAlcohol);
+		state = ALERT;
+}
+
+void AlertSafe()
+{
+		if (state != ALERT)
+		{
+			  ErrorState();
+			  return;
+		}
+		// printf("\r\n处于Alert函数中\n\r");
+	  if (currentAlcohol > ALERTTHRESHOLD)
+			  alert(1);
+		state = SHOW;
+}
+
+void FeedDog()
+{
+	  if (state != FEEDDOG)
+		{
+				ErrorState();
+			  return;
+		}
+		HAL_IWDG_Refresh(&hiwdg);
+		
+		state = DELAY;
+		
+}
+
+void Delay()
+{
+	  if (state != DELAY)
+		{
+			  ErrorState();
+			  return;
+		}
+	  HAL_Delay(1000);
+		
+		if (isSleeping)
+		    state = WAKEUP;
+		else
+			  state = READ;
+}
+
+
 
 int main(void)
 {
@@ -234,25 +512,7 @@ int main(void)
     /* USER CODE END 1 */
 
     /* MCU Configuration----------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
-
-    /* Configure the system clock */
-    SystemClock_Config();
-
-    /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    MX_DMA_Init();
-    MX_I2C1_Init();
-    MX_TIM3_Init();
-    MX_ADC3_Init();
-    MX_USART1_UART_Init();
-
-    /* USER CODE BEGIN 2 */
-    HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcx, 4); // 开启ADC转换
-    /* USER CODE END 2 */
-    remainingLoopToSleep = SLEEPTHRESHOLD;
+		state = START;
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1)
@@ -260,25 +520,72 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        // Step 1 读取酒精传感器
+			  switch (state) 
+				{
+					case START: 
+						InitAll();
+					  break;
+					case TESTSTART:
+						TestStart();
+					  break;
+					case WAITINGFORHARDWARE:
+						WaitingForHardWare();
+					  break;
+					case READ:
+						ReadSafe();
+					  break;
+					case SHOULDSLEEP:
+						ShouldSleep(currentAlcohol);
+					  break;
+					case GOTOSLEEP:
+						GoToSleep();
+					  break;
+					case WAKEUP:
+						WakeUp();
+					  break;
+					case DELAY:
+					  Delay();
+						break;
+					case ALERT:
+						AlertSafe();
+						break;
+					case SHOW:
+						ShowSafe(currentAlcohol);
+					  break;
+					case FEEDDOG:
+						FeedDog();
+					  break;
+					default:
+						printf("\r\n存在未识别状态！！！\n\r");
+						ErrorState();
+				}
+			
+			
+			
+//				if (!isSleeping) 
+//				{
+//					// Step 1 读取酒精传感器
+//						ReadSafe();
 
-        float currentAlcohol = ReadAlcohol();
-        printf("\r\n 酒精传感器 =%f \n\r", currentAlcohol);
+//						// Step 2 判断阈值并报警；2和3可颠倒进行随机化执行
+//						AlertSafe();
 
-        // Step 2 判断阈值并报警；2和3可颠倒
-        if (0)
-            alert(1);
+//						// Step 3 显示数字；2和3可颠倒
+//						Show(currentAlcohol);
 
-        // Step 3 显示数字；2和3可颠倒
-        Show(currentAlcohol);
+//						// step 4 睡眠躲避干扰：判断是否应该睡眠
+//						ShouldSleep(currentAlcohol);
 
-        // step 4 睡眠躲避干扰：判断是否应该睡眠
-        int shouldSleep = ShouldSleep(currentAlcohol);
-
-        // Step5 如果应该睡眠则进行睡眠
-        if (shouldSleep)
-            GoToSleep();
-        HAL_Delay(1000);
+//						// Step5 如果应该睡眠则进行睡眠
+//						if (shouldSleep)
+//								GoToSleep();
+//			  }
+//        // Step6 检查是否从睡眠状态苏醒
+//        if (isSleeping)
+//        {
+//					  WakeUp();
+//        }
+//        HAL_Delay(1000);
     }
     /* USER CODE END 3 */
 }
