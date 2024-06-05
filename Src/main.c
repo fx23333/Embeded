@@ -32,7 +32,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-
+// 123
 #include "adc.h"
 #include "dma.h"
 #include "usart.h"
@@ -101,7 +101,7 @@ Note melody[] = {
 	{NOTE_A4, DURATION_DOTTED_QUARTER}, // 6 (????)
 	{NOTE_A4, DURATION_DOTTED_QUARTER}	// 6 (????,??)
 };
-// unsigned char seg7code[10] = {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6} ; // ÊýÂë¹Ü×Ö¸ù
+// unsigned char seg7code[10] = {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6} ; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½
 
 __IO uint16_t adcx[4] = {0};
 unsigned char Empty[8] = {0};
@@ -109,7 +109,7 @@ uint8_t Tx1_Buffer[8] = {0};
 IWDG_HandleTypeDef hiwdg;
 bool st[5];
 int count = 0;
-// ·²ÊÇ²»»á±»³õÊ¼»¯µÄ±äÁ¿¶¼ÊÇÖØÒª±äÁ¿£¡ÐèÒª±¸·Ý£¡
+// ï¿½ï¿½ï¿½Ç²ï¿½ï¿½á±»ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Ý£ï¿½
 unsigned int remainingLoopToSleep __attribute__((section("NO_INIT"), zero_init));
 unsigned int isSleeping __attribute__((section("NO_INIT"), zero_init));
 double alcoholLastTime __attribute__((section("NO_INIT"), zero_init));
@@ -155,7 +155,7 @@ enum States
 void ErrorState()
 {
 	state = START;
-	printf("\r\nÏµÍ³³öÏÖÒì³££¬¿ªÊ¼ÈÈÆô¶¯\n\r");
+	printf("\r\nÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ì³£ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 }
 
 // {0xFC, 0x0C, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xE6}
@@ -163,7 +163,7 @@ int seg7code(int x)
 {
 	if (x < 0 || x >= 10)
 	{
-		printf("\r\nÎÞÐ§ÊäÈë\n\r");
+		printf("\r\nï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½\n\r");
 		return 0;
 	}
 
@@ -226,10 +226,10 @@ void alert(int count)
 	}
 }
 
-// @brief: ÏÔÊ¾¸¡µãÊý
+// @brief: ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void Show(double data)
 {
-	/*****************Êý¾Ý×ª»»*****************************/
+	/*****************ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½*****************************/
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -257,15 +257,15 @@ void ShowSafe(double data)
 		state = ALERT;
 }
 
-// @brief: ÏÔÊ¾ÕûÊý
+// @brief: ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
 void ShowInteger(unsigned data)
 {
-	/*****************Êý¾Ý×ª»»*****************************/
+	/*****************ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½*****************************/
 
 	if (data > 99999999)
 	{
 		data = 99999999;
-		printf("\r\nÊýÂë¹ÜÒç³ö£¡\n\r");
+		printf("\r\nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 	}
 
 	for (int i = 0; i < 8; i++)
@@ -303,7 +303,7 @@ float ReadAlcohol(void)
 
 	if (minAlcohol < uncommonSmall || maxAlcohol > uncommonLarge)
 	{
-		printf("ÕâÀïÓ¦¸ÃÖØÆô²¢ÇÒÈÈÆô¶¯£¡\n");
+		printf("ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n");
 		return -1;
 	}
 
@@ -313,14 +313,14 @@ float ReadAlcohol(void)
 void ShouldSleep(float temp)
 {
 
-	// ÕâÀïÎÒÃÇÊ×ÏÈÅÐ¶Ïµ±Ç°Å¨¶ÈºÍÉÏÒ»´ÎÅ¨¶ÈÊÇ·ñ²î¾à¹ý´ó£¬ÈôÊÇ£¬ÔòremainingLoopToSleep×Ô¼õ
-	// remainingLoopToSleep¼õµ½0ÔòÈ¥Ë¯¾õ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ïµï¿½Ç°Å¨ï¿½Èºï¿½ï¿½ï¿½Ò»ï¿½ï¿½Å¨ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç£ï¿½ï¿½ï¿½remainingLoopToSleepï¿½Ô¼ï¿½
+	// remainingLoopToSleepï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½È¥Ë¯ï¿½ï¿½
 	if (state != SHOULDSLEEP)
 	{
 		ErrorState();
 		return;
 	}
-	printf("\r\nÕâÀïÓ¦¸Ã¶ÔÊý¾ÝÍêÕûÐÔ½øÐÐÒ»¸ö¼ì²é£¡\n\r");
+	printf("\r\nï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ã¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½é£¡\n\r");
 	if (temp < 0.4 &&
 		(temp < alcoholLastTime && alcoholLastTime - temp < MAXDIFFRENCE ||
 		 temp >= alcoholLastTime && temp - alcoholLastTime < MAXDIFFRENCE))
@@ -329,11 +329,11 @@ void ShouldSleep(float temp)
 	}
 	else
 	{
-		// ÈôÅ¨¶È³öÏÖÁË½Ï´ó²î¾à£¬ÎÒÃÇÔò¸üÐÂremainingLoopToSleep
+		// ï¿½ï¿½Å¨ï¿½È³ï¿½ï¿½ï¿½ï¿½Ë½Ï´ï¿½ï¿½à£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½remainingLoopToSleep
 		remainingLoopToSleep = SLEEPTHRESHOLD;
 	}
 
-	// ¸üÐÂÉÏ´ÎÅ¨¶È
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½Å¨ï¿½ï¿½
 	alcoholLastTime = temp;
 
 	if (remainingLoopToSleep == 0)
@@ -352,7 +352,7 @@ void GoToSleep(void)
 		ErrorState();
 		return;
 	}
-	printf("\r\n×¼±¸Ë¯¾õ\n\r");
+	printf("\r\n×¼ï¿½ï¿½Ë¯ï¿½ï¿½\n\r");
 	I2C_ZLG7290_Write(&hi2c1, 0x70, ZLG_WRITE_ADDRESS1, Empty, 8);
 	isSleeping = 1;
 	// HAL_SuspendTick();
@@ -367,14 +367,14 @@ void WakeUp(void)
 		ErrorState();
 		return;
 	}
-	// ÕâÀïÎÒÃÇÖ»¶ÁÒ»´Î£¬Ò²²»ÂË²¨£¬ÒòÎªÎÒÃÇÖ»ÊÇÐèÒªÅÐ¶Ïµ±Ç°ÊÇ·ñÐèÒªÐÑÀ´
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ò»ï¿½Î£ï¿½Ò²ï¿½ï¿½ï¿½Ë²ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Òªï¿½Ð¶Ïµï¿½Ç°ï¿½Ç·ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½
 	float temp = (float)adcx[0] * (3.3 / 4096);
 	remainingLoopToSleep = SLEEPTHRESHOLD;
-	printf("\r\n×¼±¸ÐÑÀ´\n\r");
+	printf("\r\n×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 	if (!(temp > alcoholLastTime && temp - alcoholLastTime < MAXDIFFRENCE ||
 		  temp <= alcoholLastTime && alcoholLastTime - temp < MAXDIFFRENCE))
 	{
-		// ·¢ÏÖ´«¸ÐÆ÷ÊýÖµ²î¾à´óÁË£¬ÕýÊ½ÐÑÀ´
+		// ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½
 		isSleeping = 0;
 		// HAL_PWR_DisableSleepOnExit();
 		// HAL_ResumeTick();
@@ -404,7 +404,7 @@ void InitAll(void)
 	SystemClock_Config();
 	/* Initialize all configured peripherals */
 
-	// ÕâÒ»²¿·Ö6ÌõËÆºõÀÏÊ¦Ëµ³õÊ¼»¯Ë³ÐòÎÞ¹Ø£¬¿ÉÒÔ½øÐÐËæ»ú»¯Ö´ÐÐ
+	// ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½6ï¿½ï¿½ï¿½Æºï¿½ï¿½ï¿½Ê¦Ëµï¿½ï¿½Ê¼ï¿½ï¿½Ë³ï¿½ï¿½ï¿½Þ¹Ø£ï¿½ï¿½ï¿½ï¿½Ô½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½
 	MX_GPIO_Init();
 	MX_DMA_Init();
 	MX_I2C1_Init();
@@ -412,15 +412,15 @@ void InitAll(void)
 	MX_ADC3_Init();
 	MX_USART1_UART_Init();
 
-	HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcx, 4); // ¿ªÆôADC×ª»»
+	HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcx, 4); // ï¿½ï¿½ï¿½ï¿½ADC×ªï¿½ï¿½
 
-	// ³õÊ¼»¯¿´ÃÅ¹·
+	// ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Å¹ï¿½
 	hiwdg.Instance = IWDG;
 	hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
 	hiwdg.Init.Reload = 0x01D3;
 	HAL_IWDG_Init(&hiwdg);
 	HAL_IWDG_Start(&hiwdg);
-	printf("\r\nÓ²¼þ£¬¶Ë¿ÚºÍ¿´ÃÅ¹·³õÊ¼»¯Íê±Ï£¡\n\r");
+	printf("\r\nÓ²ï¿½ï¿½ï¿½ï¿½ï¿½Ë¿ÚºÍ¿ï¿½ï¿½Å¹ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ï£ï¿½\n\r");
 	state = TESTSTART;
 }
 
@@ -433,7 +433,7 @@ void WaitingForHardWare()
 	}
 	while (remainingHardWareWaitingLoop > 0)
 	{
-		// ÕâÀïÁ½¸ö´úÂë¿éÖ®¼ä¿ÉÒÔËæ»ú»¯
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			remainingHardWareWaitingLoop--;
 			ShowInteger(remainingHardWareWaitingLoop);
@@ -456,14 +456,14 @@ void TestStart(void)
 		ErrorState();
 		return;
 	}
-	if (isWarmStarting == WARMSTARTFLAG /*&& Ð£ÑéÍ¨¹ý*/)
+	if (isWarmStarting == WARMSTARTFLAG /*&& Ð£ï¿½ï¿½Í¨ï¿½ï¿½*/)
 	{
-		printf("\r\nÈÈÆô¶¯£¬×¢ÒâÕâÀï»¹ÐèÒª²¹³äÐ£Ñé£¡£¡£¡£¡£¡\n\r");
+		printf("\r\nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï»¹ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ð£ï¿½é£¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 	}
 	else
 	{
-		// ÕâÀïÒ²¿ÉÒÔËæ»ú»¯
-		printf("\r\nÀäÆô¶¯\n\r");
+		// ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		printf("\r\nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 		remainingLoopToSleep = SLEEPTHRESHOLD;
 		isSleeping = 1;
 		isWarmStarting = WARMSTARTFLAG;
@@ -485,7 +485,7 @@ void ReadSafe()
 		ErrorState();
 		return;
 	}
-	printf("\r\n ¾Æ¾«´«¸ÐÆ÷ =%f \n\r", currentAlcohol);
+	printf("\r\n ï¿½Æ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ =%f \n\r", currentAlcohol);
 	for (int i = 0; i < 2; i++)
 	{
 		st[i] = 0;
@@ -509,7 +509,7 @@ void AlertSafe()
 		ErrorState();
 		return;
 	}
-	// printf("\r\n´¦ÓÚAlertº¯ÊýÖÐ\n\r");
+	// printf("\r\nï¿½ï¿½ï¿½ï¿½Alertï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 	if (currentAlcohol > ALERTTHRESHOLD)
 		alert(1);
 	st1[ALERT] = 1;
@@ -602,7 +602,7 @@ int main(void)
 			FeedDog();
 			break;
 		default:
-			printf("\r\n´æÔÚÎ´Ê¶±ð×´Ì¬£¡£¡£¡\n\r");
+			printf("\r\nï¿½ï¿½ï¿½ï¿½Î´Ê¶ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\r");
 			ErrorState();
 		}
 	}
@@ -646,7 +646,7 @@ void SystemClock_Config(void)
 int fputc(int ch, FILE *f)
 {
 	while ((USART1->SR & 0X40) == 0)
-		; // Ñ­»··¢ËÍ,Ö±µ½·¢ËÍÍê±Ï
+		; // Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	USART1->DR = (uint8_t)ch;
 	return ch;
 }
