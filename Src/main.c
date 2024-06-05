@@ -107,7 +107,6 @@ __IO uint16_t adcx[4] = {0};
 unsigned char Empty[8] = {0};
 uint8_t Tx1_Buffer[8] = {0};
 IWDG_HandleTypeDef hiwdg;
-bool st[5];
 int count = 0;
 // 凡是不会被初始化的变量都是重要变量！需要备份！
 unsigned int remainingLoopToSleep __attribute__((section("NO_INIT"), zero_init));
@@ -121,8 +120,8 @@ unsigned int st1[2] __attribute__((section("NO_INIT"), zero_init));
 
 enum SEQ1
 {
-	ALERT,
-	SHOW
+	ALERT_SEQ1,
+	SHOW_SEQ1
 };
 
 #define SLEEPTHRESHOLD 5
@@ -250,8 +249,8 @@ void ShowSafe(double data)
 		return;
 	}
 	Show(data);
-	st1[SHOW] = 1;
-	if (st[ALERT])
+	st1[SHOW_SEQ1] = 1;
+	if (st1[ALERT_SEQ1])
 		state = SHOULDSLEEP;
 	else
 		state = ALERT;
@@ -321,7 +320,7 @@ void ShouldSleep(float temp)
 		return;
 	}
 	printf("\r\n这里应该对数据完整性进行一个检查！\n\r");
-	if (temp < 0.4 &&
+	if (temp < 0.8 &&
 		(temp < alcoholLastTime && alcoholLastTime - temp < MAXDIFFRENCE ||
 		 temp >= alcoholLastTime && temp - alcoholLastTime < MAXDIFFRENCE))
 	{
@@ -378,7 +377,7 @@ void WakeUp(void)
 		isSleeping = 0;
 		// HAL_PWR_DisableSleepOnExit();
 		// HAL_ResumeTick();
-		Show(0);
+		Show(temp);
 	}
 	else
 	{
@@ -417,7 +416,7 @@ void InitAll(void)
 	// 初始化看门狗
 	hiwdg.Instance = IWDG;
 	hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
-	hiwdg.Init.Reload = 0x01D3;
+	hiwdg.Init.Reload = 0xBFFF;
 	HAL_IWDG_Init(&hiwdg);
 	HAL_IWDG_Start(&hiwdg);
 	printf("\r\n硬件，端口和看门狗初始化完毕！\n\r");
@@ -435,12 +434,11 @@ void WaitingForHardWare()
 	{
 		// 这里两个代码块之间可以随机化
 		{
+			HAL_Delay(1000);
+		}
+		{
 			remainingHardWareWaitingLoop--;
 			ShowInteger(remainingHardWareWaitingLoop);
-		}
-
-		{
-			HAL_Delay(1000);
 		}
 	}
 	if (!isSleeping)
@@ -467,7 +465,7 @@ void TestStart(void)
 		remainingLoopToSleep = SLEEPTHRESHOLD;
 		isSleeping = 1;
 		isWarmStarting = WARMSTARTFLAG;
-		remainingHardWareWaitingLoop = 6;
+		remainingHardWareWaitingLoop = 20;
 	}
 	state = WAITINGFORHARDWARE;
 }
@@ -488,7 +486,7 @@ void ReadSafe()
 	printf("\r\n 酒精传感器 =%f \n\r", currentAlcohol);
 	for (int i = 0; i < 2; i++)
 	{
-		st[i] = 0;
+		st1[i] = 0;
 	}
 
 	int temp = rand() % 2;
@@ -512,8 +510,8 @@ void AlertSafe()
 	// printf("\r\n处于Alert函数中\n\r");
 	if (currentAlcohol > ALERTTHRESHOLD)
 		alert(1);
-	st1[ALERT] = 1;
-	if (st1[SHOW])
+	st1[ALERT_SEQ1] = 1;
+	if (st1[SHOW_SEQ1])
 	{
 		state = SHOULDSLEEP;
 	}
